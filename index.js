@@ -18,6 +18,7 @@ const io = new Server(server, {
 let rooms = [];
 let host_socket_id = {};
 let socket_host_id = {};
+let room_participants = {};
 io.on("connection", (socket) => {
   console.log(`User Connected ${socket.id}`);
   socket.on("disconnect", function () {
@@ -26,20 +27,37 @@ io.on("connection", (socket) => {
     if (HOST_ID != undefined) {
       console.log(HOST_ID);
       let room = rooms.find((r) => r.hostId === HOST_ID);
-      const ROOM_ID = room.roomId;
-      rooms.pop(room);
-      console.log(ROOM_ID + " Successfuly CLOSED ");
-      io.to(ROOM_ID).emit("leave_room", { roomId: ROOM_ID });
-      socket.leave(ROOM_ID);
+      if (room != undefined) {
+        const ROOM_ID = room.roomId;
+        rooms.pop(room);
+        console.log(ROOM_ID + " Successfuly CLOSED ");
+        io.to(ROOM_ID).emit("leave_room", { roomId: ROOM_ID });
+        socket.leave(ROOM_ID);
+      }
     } else {
       //emit ke host participan dah out.
+      const participantData = room_participants[socket.id];
+      console.log(participantData);
+      const ROOM_ID = participantData.roomId;
+      const participantId = participantData.participantId;
+
+      let room = rooms.find((r) => r.roomId === ROOM_ID);
+      console.log("participant leave");
+      socket.leave(ROOM_ID);
+      if (room != undefined) {
+        host_socket = host_socket_id[room.hostId];
+        io.to(host_socket).emit("new_participant_leave", {
+          participantId: participantId,
+        });
+      }
+
       console.log("out");
     }
   });
   //host rights
   //data = {roomId: "xxx", isStarted: "xxx"}
   socket.on("create_room", (data) => {
-    const ROOM_ID = data.roomId;
+    let ROOM_ID = data.roomId;
     let room = rooms.find((r) => r.roomId === ROOM_ID);
     host_socket_id[data.hostId] = socket.id;
     socket_host_id[socket.id] = data.hostId;
@@ -57,19 +75,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("close_room", (data) => {
-    console.log(data);
-    const ROOM_ID = data.roomId;
-    let room = rooms.find((r) => r.roomId === ROOM_ID);
-    rooms.pop(room);
-    console.log(ROOM_ID + " Successfuly CLOSED ");
-    io.to(ROOM_ID).emit("leave_room", { roomId: ROOM_ID });
-    socket.leave(ROOM_ID);
+    if (data.roomId != "") {
+      console.log(data);
+      const ROOM_ID = data.roomId;
+      let room = rooms.find((r) => r.roomId === ROOM_ID);
+      rooms.pop(room);
+      console.log(ROOM_ID + " Successfuly CLOSED ");
+      io.to(ROOM_ID).emit("leave_room", { roomId: ROOM_ID });
+      socket.leave(ROOM_ID);
+    }
   });
   //participan rights
   socket.on("join_room", (data) => {
     //data = {roomId, userId}
     //validate room isstarted sama exist
-    const ROOM_ID = data.roomId;
+    console.log(data);
+    let ROOM_ID = data.roomId;
     let room = rooms.find((r) => r.roomId === ROOM_ID);
 
     //ga ada room
@@ -88,7 +109,10 @@ io.on("connection", (socket) => {
       roomId: ROOM_ID,
       isSuccess: true,
     });
-
+    room_participants[socket.id] = {
+      roomId: data.roomId,
+      participantId: data.participantId,
+    };
     //SEND SIGNAL KE ROOM MASTER dia MASUK
     io.to(host_socket_id[room.hostId]).emit("new_participant_join", {
       participantId: data.participantId,
@@ -96,9 +120,17 @@ io.on("connection", (socket) => {
   });
 
   socket.on("leave_room", (data) => {
-    const ROOM_ID = data.roomId;
-    console.log(ROOM_ID + " Successfuly Left ");
+    let ROOM_ID = data.roomId;
+    let room = rooms.find((r) => r.roomId === ROOM_ID);
+    console.log("participant leave");
+    console.log(data);
     socket.leave(ROOM_ID);
+    if (room != undefined) {
+      host_socket = host_socket_id[room.hostId];
+      io.to(host_socket).emit("new_participant_leave", {
+        participantId: data.participantId,
+      });
+    }
   });
 });
 
