@@ -39,22 +39,25 @@ io.on("connection", (socket) => {
       }
     } else {
       //emit ke host participan dah out.
-      const participantData = room_participants[socket.id];
-      console.log(participantData);
-      const ROOM_ID = participantData.roomId;
-      const participantId = participantData.participantId;
+      if (room_participants[socket.id] != undefined){
+        const participantData = room_participants[socket.id];
+        console.log(participantData);
+        const ROOM_ID = participantData.roomId;
+        const participantId = participantData.participantId;
+  
+        let room = rooms.find((r) => r.roomId === ROOM_ID);
+        console.log("participant leave");
+        socket.leave(ROOM_ID);
+        if (room != undefined) {
+          host_socket = host_socket_id[room.hostId];
+          io.to(host_socket).emit("new_participant_leave", {
+            participantId: participantId,
+          });
+        }
 
-      let room = rooms.find((r) => r.roomId === ROOM_ID);
-      console.log("participant leave");
-      socket.leave(ROOM_ID);
-      if (room != undefined) {
-        host_socket = host_socket_id[room.hostId];
-        io.to(host_socket).emit("new_participant_leave", {
-          participantId: participantId,
-        });
       }
 
-      console.log("out");
+
     }
   });
   //host rights
@@ -142,22 +145,24 @@ io.on("connection", (socket) => {
   // - hasEnded
   // - question
   const startQuestion = (data) =>{
-    let ROOM_ID = data.roomId;
-    if (data.hasEnded != false){
-      console.log(rooms);
-      rooms.find((r) => r.roomId = ROOM_ID).isStarted = true;
-      console.log(rooms);
-      let question = data.question;
-      // question -> 
-      // questionDescription
-      // options
-  
-      io.to(ROOM_ID).emit("start_question", {
-        question : question
-      });
-    }
-    else{
-      io.to(ROOM_ID).emit("question_end", {});
+    if (data.roomId != undefined){
+      let ROOM_ID = data.roomId;
+      if (data.hasEnded != false){
+        console.log(rooms);
+        rooms.find((r) => r.roomId = ROOM_ID).isStarted = true;
+        console.log(rooms);
+        let question = data.question;
+        // question -> 
+        // questionDescription
+        // options
+    
+        io.to(ROOM_ID).emit("start_question", {
+          question : question
+        });
+      }
+      else{
+        io.to(ROOM_ID).emit("question_end", {});
+      }
     }
 
   }
