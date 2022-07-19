@@ -145,9 +145,10 @@ io.on("connection", (socket) => {
   const startQuestion = (data) => {
     let ROOM_ID = data.roomId;
     if (data.hasEnded == false) {
+      // console.log(data)
       rooms.find((r) => (r.roomId = ROOM_ID)).isStarted = true;
       let question = data.question;
-
+      console.log(ROOM_ID)
       // question ->
       // questionId
       // question
@@ -162,6 +163,7 @@ io.on("connection", (socket) => {
 
     } else {
       //minta participan ngeup score ke db
+      console.log("room end")
       io.to(ROOM_ID).emit("question_end", {});
     }
   };
@@ -173,7 +175,9 @@ io.on("connection", (socket) => {
 
   socket.on("timer_end", (data)=>{
     if (data != undefined){
-      io.to(data.roomId).emit("redirect_loading", true)
+      io.to(data.roomId).emit("redirect_loading", {
+        roomId : data.roomId 
+      })
 
 
     }
