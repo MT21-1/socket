@@ -156,16 +156,29 @@ io.on("connection", (socket) => {
       //kirim question ke participant dan start timer
       io.to(ROOM_ID).emit("start_question", {
         question: question,
+        roomId : ROOM_ID,
+        quizId : data.quizId
       });
+
     } else {
       //minta participan ngeup score ke db
       io.to(ROOM_ID).emit("question_end", {});
     }
   };
 
+
   socket.on("start_room", (data) => {
     startQuestion(data);
   });
+
+  socket.on("timer_end", (data)=>{
+    if (data != undefined){
+      io.to(data.roomId).emit("redirect_loading", true)
+
+
+    }
+  })
+
 });
 
 server.listen(3333, () => {
