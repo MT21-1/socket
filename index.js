@@ -21,7 +21,6 @@ let host_socket_id = {};
 let socket_host_id = {};
 let room_participants = {};
 io.on("connection", (socket) => {
-
   console.log(`User Connected ${socket.id}`);
 
   socket.on("disconnect", function () {
@@ -30,7 +29,7 @@ io.on("connection", (socket) => {
     if (HOST_ID != undefined) {
       console.log(HOST_ID);
       let room = rooms.find((r) => r.hostId === HOST_ID);
-      if (room != undefined)  {
+      if (room != undefined) {
         const ROOM_ID = room.roomId;
         rooms.pop(room);
         console.log(ROOM_ID + " Successfuly CLOSED ");
@@ -139,41 +138,34 @@ io.on("connection", (socket) => {
     }
   });
 
-
-  // data -> 
+  // data ->
   // - roomId
   // - hasEnded
   // - question
-  const startQuestion = (data) =>{
-    if (data.roomId != undefined){
-      let ROOM_ID = data.roomId;
-      if (data.hasEnded != false){
-        console.log(rooms);
-        rooms.find((r) => r.roomId = ROOM_ID).isStarted = true;
-        console.log(rooms);
-        let question = data.question;
-        // question -> 
-        // questionDescription
-        // options
-    
-        io.to(ROOM_ID).emit("start_question", {
-          question : question
-        });
-      }
-      else{
-        io.to(ROOM_ID).emit("question_end", {});
-      }
+  const startQuestion = (data) => {
+    let ROOM_ID = data.roomId;
+    if (data.hasEnded == false) {
+      rooms.find((r) => (r.roomId = ROOM_ID)).isStarted = true;
+      let question = data.question;
+
+      // question ->
+      // questionId
+      // question
+      // answers
+
+      //kirim question ke participant dan start timer
+      io.to(ROOM_ID).emit("start_question", {
+        question: question,
+      });
+    } else {
+      //minta participan ngeup score ke db
+      io.to(ROOM_ID).emit("question_end", {});
     }
+  };
 
-  }
-
-  socket.on("start_room", (data) =>{
-    startQuestion(data)
+  socket.on("start_room", (data) => {
+    startQuestion(data);
   });
-
-
-  
-
 });
 
 server.listen(3333, () => {
