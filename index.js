@@ -37,20 +37,21 @@ io.on("connection", (socket) => {
     } else {
       //emit ke host participan dah out.
       const participantData = room_participants[socket.id];
-      console.log(participantData);
-      const ROOM_ID = participantData.roomId;
-      const participantId = participantData.participantId;
+      if (participantData != undefined) {
+        console.log(participantData);
+        const ROOM_ID = participantData.roomId;
+        const participantId = participantData.participantId;
 
-      let room = rooms.find((r) => r.roomId === ROOM_ID);
-      console.log("participant leave");
-      socket.leave(ROOM_ID);
-      if (room != undefined) {
-        host_socket = host_socket_id[room.hostId];
-        io.to(host_socket).emit("new_participant_leave", {
-          participantId: participantId,
-        });
+        let room = rooms.find((r) => r.roomId === ROOM_ID);
+        console.log("participant leave");
+        socket.leave(ROOM_ID);
+        if (room != undefined) {
+          host_socket = host_socket_id[room.hostId];
+          io.to(host_socket).emit("new_participant_leave", {
+            participantId: participantId,
+          });
+        }
       }
-
       console.log("out");
     }
   });
